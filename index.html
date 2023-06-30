@@ -33,6 +33,7 @@
 <br>
 <section id="posts-section" class="posts-section"></section>
 <img src="images/oval brown.svg" alt="loader" class="loader">
+<img src="images/arrow-down.svg" class="loader-btn" alt="abc" width="30px" height="30px">
 <br>
 <br>
 <br>
@@ -151,8 +152,6 @@
     getSiteData();
     getPostsData();
     })
-
-
 
 
 
@@ -323,6 +322,13 @@ let dos;
         postPages();
       }
     })
+document.addEventListener("click", e=>{
+    if(e.target.classList.contains("loader-btn")){
+        document.querySelector("body").classList.add("body");    //Para que me realize solo una peticion. Si no el scroll sigue bajando y me realiza muchas peticiones getPostsData().
+        $section.appendChild(load);
+        postPages();
+    }
+})
 
 </script>
 </body>
