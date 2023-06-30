@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> WordPress Rest API</title>
+    
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway+Dots&display=swap" rel="stylesheet">
+</head>
+<body>
+    <h3 class="MAINTITLE">WORDPRESS REST API</h3>
+    <p style="margin-left: 2vw;">In this section we'll be able to consume any WebSite API as long as the WebSite was created using WordPress. 
+        <br><br> In the moment we make the petition it will bring us a little bit of information about the site and all the posts in it. 
+        <br><br> Type your domain and press the button! 🤓 
+    </p>
+    <br>
+    <form class="form">
+    <input type="text" placeholder="https://website.com" name="input" class="input">
+    <input type="submit" value="GET INFO" class="submit">
+    </form>
+    <br><br>
+
+
+
+    
+     
+<article id="site" class="site"></article>
+<br><br><br id="br">
+
+<br>
+<section id="posts-section" class="posts-section"></section>
+<img src="images/oval brown.svg" alt="loader" class="loader">
+<br>
+<br>
+<br>
+
+<template id="posts-template"> 
+    <article class="main">
+        <img class="image">
+        <aside>
+            <h2 class="title"></h2>
+            <section class="author-hover-section">
+                <div class="author-hover"></div>
+                <div class="flechitah noneh">&raquo;</div>
+                <div class="authorh noneh">Author</div>
+            </section>
+            <br>
+            <small class="date"></small>
+            <br>
+            <a target="_blank" rel="noopener" class="smallFont"> GO TO ORIGINAL POST</a>
+            <p class="excerpt"></p>
+            <div class="categories"></div>
+            <br>
+            <div class="tags"></div>
+            <br>
+            <details class="content">        <!--Nos da un acordeon. Debe tener un summary, y adentro un article para poner el contenido.-->
+             <summary class="summary">SEE POST CONTENT</summary>
+              <article class="sub"></article>
+            </details>
+        </aside>
+    </article>
+    <br>
+    <hr class="hr">
+    <br><br>
+</template>
+
+
+<script>    
+
+    const $site = document.querySelector(".site"),
+    $section = document.querySelector(".posts-section"),
+    $loader = document.querySelector(".loader"),
+    $template = document.querySelector("#posts-template").content,
+    $fragment = document.createDocumentFragment(),
+    $form = document.querySelector(".form"),
+    DOMAIN = "https://malvestida.com",
+    POSTS = `${DOMAIN}/wp-json/wp/v2/posts?_embed`;   //per_page es la cantidad de items por pagina.  page es el numero de pagina, es decir, en este caso nos trae 10 posts por peticion. Los 10 primeros estan en la pagina uno.
+   
+    let $domain;
+
+
+
+    function getSiteData(){
+    fetch(`${DOMAIN}/wp-json`)
+    .then((obj)=>{
+        return obj.ok ? obj.json() : Promise.reject(obj);
+    })
+    .then((json)=>{
+        // console.log(json)
+        $site.classList.add("sitecss");
+        $site.innerHTML = `
+        <h4 style="text-decoration: underline"> WebSite </h4>
+        <a href = "${json.home}" target="_blank" rel="noopener" class="sitehref"> ${json.name} </a>
+        <p style="font-family: Times New Roman"> "${json.description}"</p>
+        <br>
+        <h4 style="text-decoration: underline"> TimeZone </h4>
+        <p> ${json.timezone_string} </p>
+        `;
+
+    })
+    .catch((err)=>{
+     let message = err.statusText || "Ocurrio un Error, por favor intenta mas tarde. Asegúrate que el WebSite que ingresaste haya sido creado con WordPress, recuerda que algunos sitios no permiten consumir su API por cuestiones de seguridad.";
+     $site.innerHTML = `<br><br><br>Error ${err.status ? err.status : "Error"}: ${message}`;
+    })
+    }
+
+    
+    function getPostsData(){
+    fetch(POSTS)
+    .then((obj)=>{
+        return obj.ok ? obj.json() : Promise.reject(obj);
+    })
+    .then((json)=>{
+        // console.log(json)
+        document.querySelector("body").classList.remove("body");
+        json.forEach((el)=>{
+        let $categories = "",    //Las creamos dentro del forEach porque si no se acumulan los valores. Creandolas adentro se van reseteando. 
+        $tags = "";
+
+        $template.querySelector(".image").src = `${el._embedded["wp:featuredmedia"][0].source_url ? el._embedded["wp:featuredmedia"][0].source_url : ""}`;    
+        $template.querySelector(".image").alt = `${el._embedded.author[0].name ? el._embedded.author[0].name : el.yoast_head_json.author}`; 
+        $template.querySelector(".title").innerHTML = el.title.rendered;
+        $template.querySelector(".author-hover").innerHTML = `${el._embedded.author[0].name ? el._embedded.author[0].name : el.yoast_head_json.author}`; 
+        $template.querySelector(".date").innerHTML = new Date(el.date).toLocaleDateString();
+        $template.querySelector(".smallFont").href = el.link;
+        $template.querySelector(".excerpt").innerHTML = el.excerpt.rendered.replace("[&hellip;]","<i style='color:palevioletred;'>...</i>");
+        $template.querySelector(".sub").innerHTML = el.content.rendered;
+
+        el._embedded["wp:term"][0].forEach(cat => $categories += `<li data-link="${cat.link}">${cat.name}</li>`);
+        el._embedded["wp:term"][1].forEach(tag => $tags += ` #${tag.name.toUpperCase()} `);
+
+        $template.querySelector(".categories").innerHTML = $categories;
+        $template.querySelector(".tags").innerHTML = $tags;
+
+
+
+        $loader.classList.add("none");
+
+        let clon = document.importNode($template, true);
+        $fragment.appendChild(clon);
+        })
+        $section.appendChild($fragment);
+    })
+    .catch()
+    }
+ 
+ document.addEventListener("DOMContentLoaded", e=>{
+    getSiteData();
+    getPostsData();
+    })
+
+
+
+
+
+    
+function getDataSubmit(){
+
+fetch(`${document.querySelector(".input").value}/wp-json`)
+.then((obj)=>{
+    return obj.ok ? obj.json() : Promise.reject(obj);
+})
+.then((json)=>{
+    // console.log(json)
+    $site.innerHTML = `
+    <h4 style="text-decoration: underline"> WebSite </h4>
+    <a href = "${json.home}" target="_blank" rel="noopener" class="sitehref"> ${json.name} </a>
+    <p style="font-family: Times New Roman"> "${json.description ? json.description : "☝️+Info"}"</p>
+    <br>
+    <h4 style="text-decoration: underline"> TimeZone </h4>
+    <p> ${json.timezone_string} </p>
+    `;
+})
+.catch()
+}
+   
+function getPostsSubmit(){
+    fetch(`${document.querySelector(".input").value}/wp-json/wp/v2/posts?_embed`)
+    .then((obj)=>{
+        return obj.ok ? obj.json() : Promise.reject(obj);
+    })
+    .then((json)=>{
+        $section.innerHTML = "";
+        document.querySelector("#br").insertAdjacentHTML("afterend", `<hr class="hrmain">`);
+
+       json.forEach((el)=>{
+let $categories = "",
+$tags = "";
+
+$template.querySelector(".image").src = el._embedded["wp:featuredmedia"][0].source_url;    
+$template.querySelector(".image").alt = `${el._embedded.author[0].name ? el._embedded.author[0].name : el.yoast_head_json.author}`; 
+$template.querySelector(".title").innerHTML = el.title.rendered;
+$template.querySelector(".author-hover").innerHTML = `${el._embedded.author[0].name ? el._embedded.author[0].name : el.yoast_head_json.author}`; 
+$template.querySelector(".date").innerHTML = new Date(el.date).toLocaleDateString();
+$template.querySelector(".smallFont").href = el.link;
+$template.querySelector(".excerpt").innerHTML = el.excerpt.rendered.replace("[&hellip;]","<i style='color:palevioletred;'>...</i>");
+$template.querySelector(".sub").innerHTML = el.content.rendered;
+
+el._embedded["wp:term"][0].forEach(cat => $categories += `<li data-link="${cat.link}">${cat.name}</li>`);
+el._embedded["wp:term"][1].forEach(tag => $tags += ` #${tag.name.toUpperCase()} `);
+
+$template.querySelector(".categories").innerHTML = $categories;
+$template.querySelector(".tags").innerHTML = $tags;
+
+
+
+
+$loader.classList.add("none");
+
+let clon = document.importNode($template, true);
+$fragment.appendChild(clon);
+})
+       $section.appendChild($fragment);
+    })
+    .catch()
+}
+
+document.addEventListener("submit", e=>{
+        if(e.target === $form){
+            $domain = `${document.querySelector(".input").value}/wp-json/wp/v2/posts?_embed`;
+            e.preventDefault();
+            getDataSubmit();
+            getPostsSubmit();
+        }
+    })
+
+
+
+document.addEventListener("click", e=>{
+    if(e.target.matches(".categories li")){
+       window.open(e.target.dataset.link);
+    }
+})
+
+    //Author Hover -------------------- 
+let uno;
+let dos;
+
+    document.addEventListener("pointerover", e=>{
+        if(e.target.matches(".author-hover-section")){
+           uno =  e.target.querySelector(".flechitah");
+           uno.classList.remove("noneh");
+           dos = e.target.querySelector(".authorh");
+           dos.classList.remove("noneh");
+        }else{
+            uno.classList.add("noneh");
+            dos.classList.add("noneh");
+        }
+    })
+    
+    document.addEventListener("pointerover", e=>{
+        if(e.target.matches(".authorh")){
+          e.target.classList.remove("noneh");
+          e.target.previousElementSibling.classList.remove("noneh");
+        }
+    })
+    
+    document.addEventListener("pointerover", e=>{
+        if(e.target.matches(".flechitah")){
+           e.target.classList.remove("noneh");
+           e.target.nextElementSibling.classList.remove("noneh");
+        }
+    })
+
+     
+
+    let page = 2;
+    let load = document.createElement("img");
+    load.setAttribute("src", "images/oval brown.svg");
+    load.setAttribute("style", "display:block;margin:auto");
+
+
+    function postPages(){
+        fetch(`${$domain ? $domain : POSTS}&page=${page}`)
+    .then((obj)=>{
+        return obj.ok ? obj.json() : Promise.reject(obj);
+    })
+    .then((json)=>{
+        console.log(json);
+        page++;
+        document.querySelector("body").classList.remove("body");
+        $section.removeChild(load);
+
+        json.forEach((el)=>{
+        let $categories = "",    
+        $tags = "";
+
+        $template.querySelector(".image").src = `${el._embedded["wp:featuredmedia"] ? el._embedded["wp:featuredmedia"][0].source_url : ""}`;    
+        $template.querySelector(".image").alt = `${el._embedded.author[0].name ? el._embedded.author[0].name : el.yoast_head_json.author}`; 
+        $template.querySelector(".title").innerHTML = el.title.rendered;
+        $template.querySelector(".author-hover").innerHTML = `${el._embedded.author[0].name ? el._embedded.author[0].name : el.yoast_head_json.author}`; 
+        $template.querySelector(".date").innerHTML = new Date(el.date).toLocaleDateString();
+        $template.querySelector(".smallFont").href = el.link;
+        $template.querySelector(".excerpt").innerHTML = el.excerpt.rendered.replace("[&hellip;]","<i style='color:palevioletred;'>...</i>");
+        $template.querySelector(".sub").innerHTML = el.content.rendered;
+
+        el._embedded["wp:term"][0].forEach(cat => $categories += `<li data-link="${cat.link}">${cat.name}</li>`);
+        el._embedded["wp:term"][1].forEach(tag => $tags += ` #${tag.name.toUpperCase()} `);
+
+        $template.querySelector(".categories").innerHTML = $categories;
+        $template.querySelector(".tags").innerHTML = $tags;
+
+
+
+
+        let clon = document.importNode($template, true);
+        $fragment.appendChild(clon);
+        })
+        $section.appendChild($fragment);
+    })
+    .catch()
+    }
+
+
+  let h = document.documentElement;
+  window.addEventListener("scroll", e=>{
+      if(h.scrollTop + h.clientHeight === h.scrollHeight && h.scrollTop > 1000){
+        document.querySelector("body").classList.add("body");    //Para que me realize solo una peticion. Si no el scroll sigue bajando y me realiza muchas peticiones getPostsData().
+        $section.appendChild(load);
+        postPages();
+      }
+    })
+
+</script>
+</body>
+</html>
